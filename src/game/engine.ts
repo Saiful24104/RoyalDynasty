@@ -238,6 +238,32 @@ export class GameEngine {
     });
   }
 
+  private collectTaxRevenue() {
+    const kingdom = this.gameState.kingdom;
+    const taxRate = 0.12;
+    const baseRevenue = kingdom.population * taxRate;
+    const prosperityBonus = kingdom.capital.prosperity * 5;
+    const stabilityBonus = kingdom.stability * 2;
+    const revenue = Math.max(0, Math.floor(baseRevenue + prosperityBonus + stabilityBonus));
+
+    kingdom.resources.gold += revenue;
+    kingdom.treasury += revenue;
+
+    if (this.gameState.generalLedger) {
+      this.gameState.generalLedger.entries.push({
+        id: `ledger_tax_${Date.now()}`,
+        date: Date.now(),
+        description: 'Monthly tax collection',
+        category: 'income',
+        amount: revenue,
+        source: 'taxes',
+      });
+      this.gameState.generalLedger.totalIncome += revenue;
+      this.gameState.generalLedger.netBalance = this.gameState.generalLedger.totalIncome - this.gameState.generalLedger.totalExpense;
+      this.gameState.generalLedger.lastUpdated = Date.now();
+    }
+  }
+
   private onNewDay() {
     // Daily updates
     this.gameState.kingdom.ruler.age += 1 / 365;
@@ -249,6 +275,7 @@ export class GameEngine {
   private onNewMonth() {
     // Monthly updates - population growth, nobility satisfaction
     this.gameState.kingdom.population *= 1.001; // 0.1% monthly growth
+    this.collectTaxRevenue();
 
     // ===== HEIR INCUBATION PROCESSING =====
     const heir = this.gameState.kingdom.ruler.heir;

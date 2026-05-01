@@ -21,8 +21,19 @@ export interface Kingdom {
   population: number;
   stability: number;
   diplomacy: Relationship[];
+  species: Species;
   createdAt: number;
   lastUpdated: number;
+}
+
+export interface Marriage {
+  id: string;
+  partnerA: string;
+  partnerB: string;
+  allianceType: 'dynastic' | 'political' | 'trade' | 'military';
+  status: 'pending' | 'married' | 'annulled' | 'divorced';
+  weddingDate: number;
+  notes?: string;
 }
 
 export interface Ruler {
@@ -245,6 +256,7 @@ export interface Relationship {
 
 export interface GameState {
   kingdom: Kingdom;
+  otherKingdoms: Kingdom[];
   armies: Army[];
   council: NobleCouncil;
   market: Market;
@@ -256,6 +268,7 @@ export interface GameState {
   guilds: Guild[];
   tavern: Tavern;
   worldMap: WorldMap;
+  marriages: Marriage[];
   // New systems
   nobleHouses: NobleHouse[];
   enemyDynasties: EnemyDynasty[];
@@ -539,6 +552,9 @@ export interface NobleHouse {
   eliteUnit: string;
   uniqueAbility: string;
   description: string;
+  leaderName?: string;
+  leaderTitle?: string;
+  kingdomId?: string;
   relationship?: number; // 0-100, must be > 70 to unlock elite unit
   members?: HouseMember[];
 }

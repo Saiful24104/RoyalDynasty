@@ -43,6 +43,10 @@ const Dashboard: React.FC<DashboardProps> = ({ gameState, gameManager }) => {
             <span className="resource-gold">{kingdom.resources.gold.toFixed(0)}</span>
           </div>
           <div className="stat">
+            <span>Treasury:</span>
+            <span className="resource-gold">{kingdom.treasury.toFixed(0)}</span>
+          </div>
+          <div className="stat">
             <span>Food:</span>
             <span className="resource-food">{kingdom.resources.food.toFixed(0)}</span>
           </div>
@@ -96,6 +100,14 @@ const Dashboard: React.FC<DashboardProps> = ({ gameState, gameManager }) => {
               <span>{kingdom.ruler.consort.name}</span>
             </div>
           )}
+          <div className="stat">
+            <span>Species:</span>
+            <span>{kingdom.species}</span>
+          </div>
+          <div className="stat">
+            <span>Dynastic Unions:</span>
+            <span>{gameState.marriages.length}</span>
+          </div>
           {kingdom.ruler.heir && (
             <div className="stat">
               <span>Heir:</span>

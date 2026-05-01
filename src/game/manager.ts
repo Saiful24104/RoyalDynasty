@@ -1,6 +1,6 @@
 // Game Manager - Handles game logic and systems
 
-import { GameState, Kingdom, Building, BuildingType, Army, Noble, NobleCouncil, Faction, Unit, UnitType, Commander } from '../shared/types';
+import { GameState, Kingdom, Building, BuildingType, Army, Noble, NobleCouncil, Faction, Unit, UnitType, Commander, Marriage, Species } from '../shared/types';
 import { INITIAL_RESOURCES, BUILDING_CONSTRUCTION_TIME } from '../shared/constants';
 
 export class GameManager {
@@ -193,11 +193,93 @@ export class GameManager {
       return false; // Trade failed
     }
 
-    // Calculate profit
     const profit = quantity * route.profitMargin;
     this.gameState.kingdom.resources.gold += profit;
+    this.recordLedgerEntry(`Trade route ${route.from} -> ${route.to}`, 'income', profit, 'trade');
 
     return true;
+  }
+
+  collectTaxes(taxRate: number = 0.12): number {
+    const kingdom = this.gameState.kingdom;
+    const baseRevenue = kingdom.population * taxRate;
+    const prosperityBonus = kingdom.capital.prosperity * 6;
+    const stabilityBonus = kingdom.stability * 2;
+    const totalRevenue = Math.max(0, Math.floor(baseRevenue + prosperityBonus + stabilityBonus));
+
+    kingdom.resources.gold += totalRevenue;
+    kingdom.treasury += totalRevenue;
+    this.recordLedgerEntry('Tax collection', 'income', totalRevenue, 'taxes');
+
+    return totalRevenue;
+  }
+
+  sellGoods(goodId: string, quantity: number): boolean {
+    const good = this.gameState.market.goods.find(g => g.id === goodId);
+    if (!good || good.quantity < quantity) return false;
+
+    const price = this.gameState.market.prices.get(good.id) || good.basePrice;
+    const totalValue = Math.max(0, Math.floor(price * quantity));
+
+    good.quantity -= quantity;
+    this.gameState.kingdom.resources.gold += totalValue;
+    this.recordLedgerEntry(`Sold ${quantity} ${good.name}`, 'income', totalValue, 'market');
+
+    return true;
+  }
+
+  arrangeMarriage(partnerName: string, partnerSpecies: Species, allianceType: 'dynastic' | 'political' | 'trade' | 'military' = 'dynastic'): Marriage {
+    const ruler = this.gameState.kingdom.ruler;
+    const marriage: Marriage = {
+      id: `marriage_${Date.now()}`,
+      partnerA: ruler.name,
+      partnerB: partnerName,
+      allianceType,
+      status: 'married',
+      weddingDate: Date.now(),
+      notes: `${ruler.name} weds ${partnerName} of ${partnerSpecies}`,
+    };
+
+    this.gameState.marriages.push(marriage);
+    ruler.consort = {
+      id: `consort_${Date.now()}`,
+      name: partnerName,
+      title: 'Royal Consort',
+      traits: ['Alliance', 'Diplomacy'],
+      influence: 60,
+    };
+
+    ruler.legitimacy = Math.min(1.0, ruler.legitimacy + 0.1);
+    this.gameState.kingdom.stability = Math.min(100, this.gameState.kingdom.stability + 5);
+    this.recordLedgerEntry(`Royal marriage with ${partnerName}`, 'expense', 0, 'marriage');
+
+    if (!ruler.heir) {
+      this.setHeir(`${partnerName} Jr.`, 0);
+    }
+
+    return marriage;
+  }
+
+  recordLedgerEntry(description: string, category: 'income' | 'expense' | 'transfer', amount: number, source?: string): void {
+    if (!this.gameState.generalLedger) return;
+
+    this.gameState.generalLedger.entries.push({
+      id: `ledger_${Date.now()}`,
+      date: Date.now(),
+      description,
+      category,
+      amount,
+      source,
+    });
+
+    if (category === 'income') {
+      this.gameState.generalLedger.totalIncome += amount;
+    } else if (category === 'expense') {
+      this.gameState.generalLedger.totalExpense += amount;
+    }
+
+    this.gameState.generalLedger.netBalance = this.gameState.generalLedger.totalIncome - this.gameState.generalLedger.totalExpense;
+    this.gameState.generalLedger.lastUpdated = Date.now();
   }
 
   updateMarketPrices(): void {
