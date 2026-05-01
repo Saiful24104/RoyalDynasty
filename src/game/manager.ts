@@ -1,0 +1,647 @@
+// Game Manager - Handles game logic and systems
+
+import { GameState, Kingdom, Building, BuildingType, Army, Noble, NobleCouncil, Faction, Unit, UnitType, Commander } from '../shared/types';
+import { INITIAL_RESOURCES, BUILDING_CONSTRUCTION_TIME } from '../shared/constants';
+
+export class GameManager {
+  private gameState: GameState;
+
+  constructor(gameState: GameState) {
+    this.gameState = gameState;
+  }
+
+  // ===== BUILDING SYSTEM =====
+
+  buildBuilding(buildingType: BuildingType): boolean {
+    const costMap: { [key in BuildingType]?: { gold: number; wood: number; stone: number } } = {
+      [BuildingType.FARM]: { gold: 200, wood: 50, stone: 100 },
+      [BuildingType.BARRACKS]: { gold: 500, wood: 200, stone: 300 },
+      [BuildingType.MARKET]: { gold: 300, wood: 100, stone: 150 },
+      [BuildingType.CASTLE]: { gold: 2000, wood: 500, stone: 1000 },
+      [BuildingType.WALLS]: { gold: 1000, wood: 300, stone: 800 },
+      [BuildingType.UNIVERSITY]: { gold: 800, wood: 200, stone: 400 },
+      [BuildingType.TEMPLE]: { gold: 500, wood: 150, stone: 300 },
+      [BuildingType.WORKSHOP]: { gold: 400, wood: 250, stone: 200 },
+      [BuildingType.WAREHOUSE]: { gold: 300, wood: 200, stone: 100 },
+      [BuildingType.LIBRARY]: { gold: 600, wood: 150, stone: 250 },
+    };
+
+    const cost = costMap[buildingType];
+    if (!cost) return false;
+
+    const resources = this.gameState.kingdom.resources;
+
+    if (resources.gold < cost.gold || resources.wood < cost.wood || resources.stone < cost.stone) {
+      return false;
+    }
+
+    resources.gold -= cost.gold;
+    resources.wood -= cost.wood;
+    resources.stone -= cost.stone;
+
+    const building: Building = {
+      id: `building_${Date.now()}`,
+      type: buildingType,
+      level: 1,
+      constructionProgress: 0,
+      productionMultiplier: 1.0,
+      maintenanceCost: 50,
+      isConstructing: true,
+    };
+
+    this.gameState.kingdom.capital.buildings.push(building);
+    return true;
+  }
+
+  upgradeBuilding(buildingId: string): boolean {
+    const building = this.gameState.kingdom.capital.buildings.find(b => b.id === buildingId);
+    if (!building || building.isConstructing) return false;
+
+    const upgradeCost = building.level * 200;
+    if (this.gameState.kingdom.resources.gold < upgradeCost) return false;
+
+    this.gameState.kingdom.resources.gold -= upgradeCost;
+    building.isConstructing = true;
+    building.constructionProgress = 0;
+
+    return true;
+  }
+
+  // ===== ARMY SYSTEM =====
+
+  recruitUnits(armyId: string, unitType: UnitType, count: number): boolean {
+    const costMap: { [key in UnitType]?: { gold: number; food: number } } = {
+      [UnitType.INFANTRY]: { gold: 50, food: 100 },
+      [UnitType.CAVALRY]: { gold: 150, food: 120 },
+      [UnitType.ARCHER]: { gold: 75, food: 100 },
+      [UnitType.MAGE]: { gold: 300, food: 50 },
+      [UnitType.KNIGHT]: { gold: 200, food: 150 },
+      [UnitType.SIEGE_WEAPON]: { gold: 500, food: 100 },
+    };
+
+    const unitCost = costMap[unitType];
+    if (!unitCost) return false;
+
+    const totalCost = {
+      gold: unitCost.gold * count,
+      food: unitCost.food * count,
+    };
+
+    const resources = this.gameState.kingdom.resources;
+    if (resources.gold < totalCost.gold || resources.food < totalCost.food) {
+      return false;
+    }
+
+    resources.gold -= totalCost.gold;
+    resources.food -= totalCost.food;
+
+    const army = this.gameState.armies.find(a => a.id === armyId);
+    if (!army) return false;
+
+    const existingUnit = army.units.find(u => u.type === unitType);
+
+    if (existingUnit) {
+      existingUnit.count += count;
+    } else {
+      army.units.push({
+        id: `unit_${Date.now()}`,
+        type: unitType,
+        count,
+        health: 100,
+        training: 0,
+      });
+    }
+
+    return true;
+  }
+
+  dismissUnits(armyId: string, unitId: string, count: number): boolean {
+    const army = this.gameState.armies.find(a => a.id === armyId);
+    if (!army) return false;
+
+    const unit = army.units.find(u => u.id === unitId);
+    if (!unit || unit.count < count) return false;
+
+    unit.count -= count;
+
+    if (unit.count === 0) {
+      army.units = army.units.filter(u => u.id !== unitId);
+    }
+
+    return true;
+  }
+
+  // ===== NOBILITY SYSTEM =====
+
+  addNobleToCouncil(noble: Noble): void {
+    this.gameState.council.nobles.push(noble);
+  }
+
+  updateNobileLoyalty(nobleId: string, loyaltyChange: number): void {
+    const noble = this.gameState.council.nobles.find(n => n.id === nobleId);
+    if (noble) {
+      noble.loyalty = Math.max(0, Math.min(100, noble.loyalty + loyaltyChange));
+    }
+  }
+
+  createFaction(faction: Faction): void {
+    this.gameState.council.factions.push(faction);
+  }
+
+  addNobleToFaction(nobleId: string, factionId: string): void {
+    const faction = this.gameState.council.factions.find(f => f.id === factionId);
+    if (faction) {
+      const noble = this.gameState.council.nobles.find(n => n.id === nobleId);
+      if (noble && !faction.members.includes(nobleId)) {
+        faction.members.push(nobleId);
+        noble.faction = factionId;
+      }
+    }
+  }
+
+  // ===== HEIR SYSTEM =====
+
+  setConsort(consortName: string): void {
+    this.gameState.kingdom.ruler.consort = {
+      id: `consort_${Date.now()}`,
+      name: consortName,
+      title: 'Consort',
+      traits: [],
+      influence: 50,
+    };
+  }
+
+  setHeir(heirName: string, age: number = 0): void {
+    this.gameState.kingdom.ruler.heir = {
+      id: `heir_${Date.now()}`,
+      name: heirName,
+      age,
+      legitimacy: 1.0,
+      traits: [],
+      potential: { ...this.gameState.kingdom.ruler.skills },
+    };
+  }
+
+  // ===== ECONOMY SYSTEM =====
+
+  executeTradeRoute(routeId: string, quantity: number): boolean {
+    const route = this.gameState.market.tradingRoutes.find(r => r.id === routeId);
+    if (!route || !route.isActive) return false;
+
+    // Risk check
+    if (Math.random() < route.riskLevel) {
+      return false; // Trade failed
+    }
+
+    // Calculate profit
+    const profit = quantity * route.profitMargin;
+    this.gameState.kingdom.resources.gold += profit;
+
+    return true;
+  }
+
+  updateMarketPrices(): void {
+    // Fluctuate prices based on supply/demand
+    this.gameState.market.goods.forEach(good => {
+      const currentPrice = this.gameState.market.prices.get(good.id) || good.basePrice;
+      const fluctuation = (Math.random() - 0.5) * 0.2; // ±10% fluctuation
+      const newPrice = currentPrice * (1 + fluctuation);
+
+      this.gameState.market.prices.set(good.id, newPrice);
+    });
+  }
+
+  // ===== DIPLOMACY SYSTEM =====
+
+  improveRelations(kingdomId: string, improvement: number): void {
+    const relationship = this.gameState.kingdom.diplomacy.find(r => r.kingdomId === kingdomId);
+    if (relationship) {
+      relationship.relationshipValue = Math.max(-100, Math.min(100, relationship.relationshipValue + improvement));
+    }
+  }
+
+  declareWar(kingdomId: string): void {
+    const relationship = this.gameState.kingdom.diplomacy.find(r => r.kingdomId === kingdomId);
+    if (relationship) {
+      relationship.hostility = true;
+      relationship.relationshipValue = -100;
+    }
+  }
+
+  makePeace(kingdomId: string): void {
+    const relationship = this.gameState.kingdom.diplomacy.find(r => r.kingdomId === kingdomId);
+    if (relationship) {
+      relationship.hostility = false;
+      relationship.relationshipValue = 0;
+    }
+  }
+
+  // ===== GENERAL METHODS =====
+
+  getGameState(): GameState {
+    return this.gameState;
+  }
+
+  getCurrentDate(): string {
+    const time = this.gameState.gameTime;
+    return `Year ${time.year}, Month ${time.month}, Day ${time.day}`;
+  }
+
+  getKingdomInfo(): Kingdom {
+    return this.gameState.kingdom;
+  }
+
+  calculateKingdomScore(): number {
+    const kingdom = this.gameState.kingdom;
+    return (
+      kingdom.stability * 2 +
+      kingdom.population / 100 +
+      (kingdom.resources.gold / 100) +
+      (this.gameState.armies.reduce((sum, a) => sum + a.units.reduce((s, u) => s + u.count, 0), 0) * 5)
+    );
+  }
+
+  // ==================== COURT SYSTEM ====================
+  
+  performCeremony(ceremonyId: string): void {
+    const ceremony = this.gameState.kingdom.capital.court?.ceremonies.find(c => c.id === ceremonyId);
+    if (!ceremony) return;
+
+    const cost = ceremony.cost;
+    if (this.gameState.kingdom.resources.gold < cost) return;
+
+    this.gameState.kingdom.resources.gold -= cost;
+    this.gameState.kingdom.resources.prestige += ceremony.prestigeGain;
+    
+    // Impact court members' loyalty
+    if (this.gameState.kingdom.capital.court?.courtMembers) {
+      this.gameState.kingdom.capital.court.courtMembers.forEach(member => {
+        member.loyalty = Math.min(100, member.loyalty + ceremony.loyaltyImpact);
+      });
+    }
+  }
+
+  // ==================== BLOODLINE SYSTEM ====================
+
+  addBloodlineMember(bloodlineId: string, member: any): void {
+    const bloodline = this.gameState.bloodlines.find(b => b.id === bloodlineId);
+    if (!bloodline) return;
+    
+    member.id = `member_${Date.now()}`;
+    bloodline.members.push(member);
+  }
+
+  // ==================== HERO SYSTEM ====================
+
+  recruitHero(hero: any): void {
+    if (this.gameState.kingdom.resources.gold < 500) return;
+    
+    this.gameState.kingdom.resources.gold -= 500;
+    hero.id = `hero_${Date.now()}`;
+    hero.joinDate = new Date().toISOString();
+    this.gameState.heroes.push(hero);
+  }
+
+  improveHeroSkill(heroId: string, skillName: string): void {
+    const hero = this.gameState.heroes.find(h => h.id === heroId);
+    if (!hero) return;
+
+    const skillCost = 100 * (hero.level || 1);
+    if (this.gameState.kingdom.resources.gold < skillCost) return;
+
+    this.gameState.kingdom.resources.gold -= skillCost;
+    const skill = hero.skills.find(s => s.name === skillName);
+    if (skill) {
+      skill.level = (skill.level || 1) + 1;
+    }
+  }
+
+  // ==================== GUILD SYSTEM ====================
+
+  recruitGuildMember(guildId: string, memberName: string): void {
+    const guild = this.gameState.guilds.find(g => g.id === guildId);
+    if (!guild) return;
+
+    const cost = 50;
+    if (this.gameState.kingdom.resources.gold < cost) return;
+
+    this.gameState.kingdom.resources.gold -= cost;
+    guild.members.push({
+      id: `member_${Date.now()}`,
+      name: memberName,
+      rank: 'apprentice',
+      skills: [],
+      reputation: 0
+    });
+  }
+
+  executeGuildQuest(questId: string): void {
+    // Find quest in any guild
+    for (const guild of this.gameState.guilds) {
+      const quest = guild.quests.find(q => q.id === questId);
+      if (!quest) continue;
+
+      if (quest.status === 'in_progress' || quest.status === 'available') {
+        quest.status = 'completed' as any;
+        this.gameState.kingdom.resources.gold += quest.reward;
+        this.gameState.kingdom.resources.prestige += 10;
+      }
+      return;
+    }
+  }
+
+  // ==================== TAVERN SYSTEM ====================
+
+  tavernAction(actionType: string): void {
+    const tavern = this.gameState.tavern;
+    if (!tavern) return;
+
+    switch (actionType) {
+      case 'drink':
+        if (this.gameState.kingdom.resources.gold < 10) return;
+        this.gameState.kingdom.resources.gold -= 10;
+        tavern.level = Math.min(100, tavern.level + 0.2);
+        break;
+
+      case 'host_tournament':
+        if (this.gameState.kingdom.resources.gold < 500) return;
+        this.gameState.kingdom.resources.gold -= 500;
+        this.gameState.kingdom.resources.prestige += 25;
+        tavern.level = Math.min(100, tavern.level + 1);
+        break;
+
+      case 'gather_intelligence':
+        if (this.gameState.kingdom.resources.gold < 100) return;
+        this.gameState.kingdom.resources.gold -= 100;
+        // Generate rumor
+        const rumors = tavern.rumors;
+        if (rumors.length > 0) {
+          rumors[Math.floor(Math.random() * rumors.length)].verified = true;
+        }
+        break;
+    }
+  }
+
+  // ==================== ACADEMY SYSTEM ====================
+
+  enrollScholar(scholarName: string, specialization: string): void {
+    const academy = this.gameState.kingdom.capital.academy;
+    if (!academy) return;
+
+    const cost = 200;
+    if (this.gameState.kingdom.resources.gold < cost) return;
+
+    this.gameState.kingdom.resources.gold -= cost;
+    academy.students.push({
+      id: `scholar_${Date.now()}`,
+      name: scholarName,
+      specialization: specialization,
+      level: 1,
+      progress: 0
+    });
+  }
+
+  researchMagic(researchType: string): void {
+    const academy = this.gameState.kingdom.capital.academy;
+    if (!academy) return;
+
+    const manaCost = researchType === 'Necromancy' ? 150 : 100;
+    if (this.gameState.kingdom.resources.mana < manaCost) return;
+
+    this.gameState.kingdom.resources.mana -= manaCost;
+    academy.knowledgePool += manaCost / 2;
+  }
+
+  // ==================== WORLD MAP SYSTEM ====================
+
+  conquerTerritory(regionId: string): void {
+    const region = this.gameState.worldMap.regions.find(r => r.id === regionId);
+    if (!region || region.controlled_by === this.gameState.kingdom.id) return;
+
+    const conquestCost = 1000;
+    if (this.gameState.kingdom.resources.gold < conquestCost) return;
+
+    this.gameState.kingdom.resources.gold -= conquestCost;
+    region.controlled_by = this.gameState.kingdom.id;
+
+    // Add territory to player
+    this.gameState.worldMap.playerTerritories.push({
+      id: `territory_${Date.now()}`,
+      regionId: region.id,
+      name: region.name,
+      prosperity: 50,
+      defenses: 50
+    });
+  }
+
+  // ==================== HEIR INCUBATION SYSTEM ====================
+
+  startHeirIncubation(consortName: string): void {
+    if (!this.gameState.kingdom.ruler.consort) {
+      this.setConsort(consortName);
+    }
+
+    // Create heir in incubation state
+    const heir = {
+      id: `heir_incubating_${Date.now()}`,
+      name: `${consortName}'s Child`,
+      age: 0,
+      legitimacy: 0.9,
+      traits: [],
+      potential: { ...this.gameState.kingdom.ruler.skills },
+      isIncubating: true,
+      incubationMonthsRemaining: 9,
+      incubationResources: {
+        goldInvested: 0,
+        foodInvested: 0,
+        manaInvested: 0,
+      },
+    };
+
+    this.gameState.kingdom.ruler.heir = heir as any;
+  }
+
+  investInHeirDevelopment(resourceType: string, amount: number): void {
+    const heir = this.gameState.kingdom.ruler.heir;
+    if (!heir || !heir.isIncubating || !heir.incubationResources) return;
+
+    const resources = this.gameState.kingdom.resources;
+
+    switch (resourceType.toLowerCase()) {
+      case 'gold':
+        if (resources.gold < amount) return;
+        resources.gold -= amount;
+        heir.incubationResources.goldInvested += amount;
+        // Gold increases leadership potential
+        heir.potential.leadership += amount / 100;
+        break;
+      case 'food':
+        if (resources.food < amount) return;
+        resources.food -= amount;
+        heir.incubationResources.foodInvested += amount;
+        // Food increases physical stats (martial)
+        heir.potential.military += amount / 100;
+        break;
+      case 'mana':
+        if (resources.mana < amount) return;
+        resources.mana -= amount;
+        heir.incubationResources.manaInvested += amount;
+        // Mana increases wisdom and magical knowledge
+        heir.potential.wisdom += amount / 100;
+        break;
+    }
+  }
+
+  // ==================== INFLUENCE & BACKLASH SYSTEM ====================
+
+  exertInfluence(source: string, amount: number): void {
+    const influence = this.gameState.influenceSystem;
+    const { BACKLASH_THRESHOLD, BACKLASH_PENALTY, BACKLASH_STABILITY_LOSS } = require('../shared/constants').INFLUENCE_SETTINGS;
+
+    influence.currentInfluence = Math.min(100, influence.currentInfluence + amount);
+    influence.sources.push({
+      id: `influence_${Date.now()}`,
+      source,
+      amount,
+      timestamp: Date.now(),
+    });
+
+    // Check for backlash
+    if (influence.currentInfluence > BACKLASH_THRESHOLD) {
+      influence.backlashCounter += amount;
+      influence.internalFriction += 2;
+      this.gameState.kingdom.stability -= BACKLASH_STABILITY_LOSS;
+    }
+  }
+
+  resolveBacklash(): void {
+    const influence = this.gameState.influenceSystem;
+    influence.backlashCounter = Math.max(0, influence.backlashCounter - 10);
+    influence.internalFriction = Math.max(0, influence.internalFriction - 1);
+    influence.externalBacklash = Math.max(0, influence.externalBacklash - 2);
+  }
+
+  // ==================== NOBLE HOUSE SYSTEM ====================
+
+  improveHouseRelation(houseId: string, improvement: number): void {
+    const house = this.gameState.nobleHouses.find(h => h.id === houseId);
+    if (house) {
+      house.relationship = Math.max(0, Math.min(100, (house.relationship || 0) + improvement));
+    }
+  }
+
+  unlockEliteUnit(houseId: string): boolean {
+    const house = this.gameState.nobleHouses.find(h => h.id === houseId);
+    if (!house || (house.relationship || 0) < 70) return false;
+
+    // House relationship is high enough to unlock elite unit
+    return true;
+  }
+
+  // ==================== ENEMY DYNASTY SYSTEM ====================
+
+  declareWarOnDynasty(dynastyId: string): void {
+    const dynasty = this.gameState.enemyDynasties.find(d => d.id === dynastyId);
+    if (dynasty) {
+      dynasty.isAtWar = true;
+      dynasty.relations = -100;
+      this.gameState.kingdom.stability -= 15;
+    }
+  }
+
+  makePeaceWithDynasty(dynastyId: string): void {
+    const dynasty = this.gameState.enemyDynasties.find(d => d.id === dynastyId);
+    if (dynasty) {
+      dynasty.isAtWar = false;
+      dynasty.relations = 0;
+    }
+  }
+
+  // ==================== SUCCESSION LAW SYSTEM ====================
+
+  changeSuccessionLaw(newLawId: string): void {
+    const SUCCESSION_LAWS = require('../shared/constants').SUCCESSION_LAWS;
+    const law = Object.values(SUCCESSION_LAWS).find((l: any) => l.id === newLawId);
+    if (law) {
+      this.gameState.successionLaw = law;
+      this.gameState.kingdom.stability += 5; // Stability change from new law
+    }
+  }
+
+  // ==================== FINANCIAL LEDGER SYSTEM ====================
+
+  recordLedgerEntry(description: string, category: string, amount: number, source?: string, destination?: string): void {
+    const ledger = this.gameState.generalLedger;
+    const entry = {
+      id: `entry_${Date.now()}`,
+      date: Date.now(),
+      description,
+      category: category as any,
+      amount,
+      source,
+      destination,
+    };
+
+    ledger.entries.push(entry);
+
+    if (category === 'income') {
+      ledger.totalIncome += amount;
+    } else if (category === 'expense') {
+      ledger.totalExpense += amount;
+    }
+
+    ledger.netBalance = ledger.totalIncome - ledger.totalExpense;
+    ledger.lastUpdated = Date.now();
+  }
+
+  auditRivalHouse(houseId: string): any {
+    const rival = this.gameState.nobleHouses.find(h => h.id === houseId);
+    if (!rival) return null;
+
+    const auditCost = 500;
+    if (this.gameState.kingdom.resources.gold < auditCost) return null;
+
+    this.gameState.kingdom.resources.gold -= auditCost;
+
+    // Simulated audit findings
+    const findings = [
+      { id: 'find_1', title: 'Tax Discrepancies', description: 'Unusual tax revenue patterns detected', severity: 'medium' as const, evidence: '20% variance from expected' },
+      { id: 'find_2', title: 'Military Buildup', description: 'Increased military spending', severity: 'high' as const, evidence: 'Troop count up 30%' },
+    ];
+
+    return {
+      id: `audit_${Date.now()}`,
+      targetHouse: houseId,
+      dateInitiated: Date.now(),
+      findings: Math.random() > 0.5 ? findings.slice(0, 1) : findings,
+      suspicions: ['Embezzlement', 'Rebellion planning'],
+      completed: true,
+    };
+  }
+
+  // ==================== ESTATE SYSTEM ====================
+
+  developEstate(estateId: string): void {
+    const estate = this.gameState.estates.find(e => e.id === estateId);
+    if (!estate) return;
+
+    const developmentCost = 300;
+    if (this.gameState.kingdom.resources.gold < developmentCost) return;
+
+    this.gameState.kingdom.resources.gold -= developmentCost;
+    estate.prosperity = Math.min(100, estate.prosperity + 10);
+    estate.population = Math.floor(estate.population * 1.05);
+  }
+
+  buildEstateDefenses(estateId: string): void {
+    const estate = this.gameState.estates.find(e => e.id === estateId);
+    if (!estate) return;
+
+    const defenseCost = 500;
+    if (this.gameState.kingdom.resources.stone < defenseCost / 2 || this.gameState.kingdom.resources.gold < defenseCost / 2) return;
+
+    this.gameState.kingdom.resources.gold -= defenseCost / 2;
+    this.gameState.kingdom.resources.stone -= defenseCost / 2;
+    estate.defenses = Math.min(100, estate.defenses + 15);
+  }
+}
