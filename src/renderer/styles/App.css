@@ -2141,3 +2141,22 @@ input:focus {
   border-radius: 4px;
   text-align: center;
 }
+
+/* Imperial Component Styles */
+.imperial-overview {
+  background-size: cover;
+  background-position: center;
+  min-height: 100vh;
+}
+
+.imperial-pillars {
+  background-size: cover;
+  background-position: center;
+  min-height: 100vh;
+}
+
+.constellation-mastery {
+  background-size: cover;
+  background-position: center;
+  min-height: 100vh;
+}
