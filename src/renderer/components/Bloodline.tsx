@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { GameState } from '../../shared/types';
 import { GameManager } from '../../game/manager';
+import { IMAGE_ASSETS } from '../config';
 
 interface BloodlineProps {
   gameState: GameState;
@@ -59,7 +60,10 @@ const Bloodline: React.FC<BloodlineProps> = ({ gameState, gameManager }) => {
 
     return (
       <div className="family-tree-section">
-        <div className="family-tree-background">
+        <div 
+          className="family-tree-background"
+          style={{ backgroundImage: `url(${IMAGE_ASSETS.backgrounds.throneRoom})` }}
+        >
           <div className="family-tree-container">
             {/* Emperor */}
             <div className="generation-level">

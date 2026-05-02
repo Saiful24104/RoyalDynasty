@@ -1,7 +1,8 @@
-// Game Manager - Handles game logic and systems
+'''// Game Manager - Handles game logic and systems
 
 import { GameState, Kingdom, Building, BuildingType, Army, Noble, NobleCouncil, Faction, Unit, UnitType, Commander, Marriage, Species, SuccessionLaw } from '../shared/types';
 import { INITIAL_RESOURCES, BUILDING_CONSTRUCTION_TIME, SUCCESSION_LAWS } from '../shared/constants';
+import { IMAGE_ASSETS } from '../renderer/config';
 
 export class GameManager {
   private gameState: GameState;
@@ -1474,7 +1475,7 @@ export class GameManager {
         emperor: {
           id: ruler.id,
           name: ruler.name,
-          portraitPath: '/assets/backgrounds/portrait-aldwin.png',
+          portraitPath: IMAGE_ASSETS.portraits.aldwin,
           ageStage: 'adult',
           cultivationLevel: 50,
           cultivationProgress: 0,
@@ -1483,7 +1484,7 @@ export class GameManager {
         consort: consort ? {
           id: consort.id,
           name: consort.name,
-          portraitPath: '/assets/backgrounds/portrait-seraphine.png',
+          portraitPath: IMAGE_ASSETS.portraits.seraphine,
           ageStage: 'adult',
           cultivationLevel: 40,
           cultivationProgress: 0,
@@ -1530,7 +1531,7 @@ export class GameManager {
         {
           id: 'house_iron_thorne',
           name: 'House Iron-Thorne',
-          crestPath: '/assets/crests/crest-iron-thorne.png',
+          crestPath: IMAGE_ASSETS.crests.ironThorne,
           lordName: 'Lord Thorne',
           loyalty: 70,
           wealth: 5000,
@@ -1554,7 +1555,7 @@ export class GameManager {
         {
           id: 'house_quartz',
           name: 'House Quartz',
-          crestPath: '/assets/crests/crest-quartz.png',
+          crestPath: IMAGE_ASSETS.crests.quartz,
           lordName: 'Lord Granite',
           loyalty: 65,
           wealth: 3500,
@@ -1600,4 +1601,4 @@ export class GameManager {
     }
   }
 }
-
+''
