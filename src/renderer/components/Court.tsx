@@ -1,6 +1,7 @@
 import React from 'react';
 import { GameState } from '../../shared/types';
 import { GameManager } from '../../game/manager';
+import { IMAGE_ASSETS } from '../config';
 
 interface CourtProps {
   gameState: GameState;
@@ -9,9 +10,52 @@ interface CourtProps {
 
 const Court: React.FC<CourtProps> = ({ gameState, gameManager }) => {
   const court = gameState.kingdom.capital.court;
+  const conqueredKingdoms = gameState.otherKingdoms.filter(k => k.isConquered === true);
+
+  const getOverlays = () => {
+    const overlays = [];
+    if (court.throneRoomLevel >= 10) {
+      overlays.push(IMAGE_ASSETS.backgrounds.manaVeins);
+    }
+    if (court.throneRoomLevel >= 20) {
+      overlays.push(IMAGE_ASSETS.backgrounds.throneGlow);
+    }
+    if (court.throneRoomLevel >= 50) {
+      overlays.push(IMAGE_ASSETS.backgrounds.houseSpirits);
+    }
+    return overlays;
+  };
 
   return (
-    <div className="court-view">
+    <div 
+      className="court-view"
+      style={{ backgroundImage: `url(${IMAGE_ASSETS.backgrounds.throneRoom})` }}
+    >
+      <div className="throne-room-overlays">
+        {getOverlays().map((overlay, index) => (
+          <div
+            key={index}
+            className="throne-room-overlay"
+            style={{ backgroundImage: `url(${overlay})` }}
+          />
+        ))}
+      </div>
+
+      <div className="trophy-hall">
+        {conqueredKingdoms.map(kingdom => (
+          <div 
+            key={kingdom.id}
+            className="trophy-banner"
+            style={{ backgroundImage: `url(${IMAGE_ASSETS.banners.ironThorne})` }} 
+          />
+        ))}
+      </div>
+
+      <div 
+        className="map-table"
+        style={{ backgroundImage: `url(${IMAGE_ASSETS.backgrounds.mapTable})` }}
+      />
+
       <h2>Throne Room</h2>
 
       <div className="court-sections">

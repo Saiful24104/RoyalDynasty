@@ -24,6 +24,7 @@ export interface Kingdom {
   species: Species;
   createdAt: number;
   lastUpdated: number;
+  isConquered?: boolean; // Add this line
   // New systems
   imperialOverview?: ImperialOverview;
   imperialPillars?: ImperialPillar[];
@@ -112,7 +113,7 @@ export interface Heir {
   // Cultivation progression
   cultivationLevel?: number; // 1-100+
   cultivationProgress?: number; // 0-100
-  ageStage?: 'infant' | 'youth' | 'adult' | 'elder';
+  ageStage: 'infant' | 'youth' | 'adult' | 'elder';
   portraitPath?: string;
   systemEyePotential?: number; // 0-100
   bloodlineTalent?: string;
