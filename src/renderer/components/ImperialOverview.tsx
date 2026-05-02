@@ -65,7 +65,7 @@ const ImperialOverview: React.FC<ImperialOverviewProps> = ({ gameState, gameMana
           </div>
           <div className="summary-card">
             <span className="summary-label">Vassal Count</span>
-            <span className="summary-value">{imperial.vasselCount}</span>
+            <span className="summary-value">{imperial.vassalCount}</span>
           </div>
         </div>
         <button className="refresh-btn" onClick={() => gameManager.updateImperialOverview()}>
@@ -79,7 +79,7 @@ const ImperialOverview: React.FC<ImperialOverviewProps> = ({ gameState, gameMana
           <div className="metric-icon">👑</div>
           <div className="metric-content">
             <h3>Vassal Count</h3>
-            <div className="metric-value">{imperial.vasselCount}</div>
+            <div className="metric-value">{imperial.vassalCount}</div>
             <p className="metric-detail">Minor Vassals Under Your Rule</p>
             <div className="metric-effect">
               <strong>Effects:</strong>

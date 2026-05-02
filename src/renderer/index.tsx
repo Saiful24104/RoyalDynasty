@@ -1,13 +1,14 @@
 import React from 'react';
-import '../styles/App.css';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import './styles/index.css';
 
-const App: React.FC = () => {
-  return (
-    <div className="app">
-      <h1>Royal Dynasty Simulator</h1>
-      <p>Launching game...</p>
-    </div>
+const rootElement = document.getElementById('root');
+if (rootElement) {
+  const root = ReactDOM.createRoot(rootElement);
+  root.render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
   );
-};
-
-export default App;
+}

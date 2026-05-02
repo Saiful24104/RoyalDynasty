@@ -733,27 +733,49 @@ export class GameManager {
     if (!this.gameState.kingdom.imperialOverview) {
       this.gameState.kingdom.imperialOverview = {
         id: `imperial_${Date.now()}`,
-        vasselCount: 0,
+        vassalCount: 0,
         empireStability: 50,
         demonicInfluence: 0,
       };
     }
+
+    if (!this.gameState.kingdom.prophecyCountdown) {
+      this.gameState.kingdom.prophecyCountdown = {
+        id: `prophecy_${Date.now()}`,
+        kingdomsConquered: 0,
+        endOfDaysTriggered: false,
+        lastUpdateDate: Date.now(),
+        milestoneEvents: [
+          { id: 'milestone_1', kingdomsRequired: 3, name: 'First Conquest', description: 'Secure three kingdoms', triggered: false },
+          { id: 'milestone_2', kingdomsRequired: 6, name: 'Rising Emperor', description: 'Secure six kingdoms', triggered: false },
+          { id: 'milestone_3', kingdomsRequired: 10, name: 'End of Days', description: 'Secure all ten kingdoms', triggered: false },
+        ],
+      };
+    }
+
+    this.gameState.kingdom.namedHouses = this.gameState.kingdom.namedHouses || [];
   }
 
   updateImperialOverview(): void {
     const imperial = this.gameState.kingdom.imperialOverview;
     if (!imperial) return;
 
-    // Update Empire Stability as average loyalty of 15 Named Houses
+    // Update Empire Stability as average loyalty of Named Houses
     if (this.gameState.kingdom.namedHouses && this.gameState.kingdom.namedHouses.length > 0) {
       const totalLoyalty = this.gameState.kingdom.namedHouses.reduce((sum, h) => sum + h.loyalty, 0);
       imperial.empireStability = Math.floor(totalLoyalty / this.gameState.kingdom.namedHouses.length);
     }
 
     // Vassal count affects Levy Recovery Speed and Tax Base
-    imperial.vasselCount = this.gameState.kingdom.namedHouses?.length || 0;
+    imperial.vassalCount = this.gameState.kingdom.namedHouses?.length || 0;
 
-    // Check for Civil War if Empire Stability < 30%
+    // Vassals increase Demonic Influence over time
+    imperial.demonicInfluence = Math.min(100, imperial.demonicInfluence + (imperial.vassalCount * 0.01));
+
+    if (this.gameState.kingdom.prophecyCountdown) {
+      this.gameState.kingdom.prophecyCountdown.lastUpdateDate = Date.now();
+    }
+
     if (imperial.empireStability < 30) {
       this.triggerCivilWarEvent();
     }
@@ -810,6 +832,7 @@ export class GameManager {
             icon: '⚔️',
           },
           isActive: false,
+          occupant: null,
         },
         {
           id: `pillar_coin_${Date.now()}`,
@@ -846,6 +869,7 @@ export class GameManager {
             icon: '👑',
           },
           isActive: false,
+          occupant: null,
         },
       ];
     }
@@ -963,7 +987,7 @@ export class GameManager {
       case 'forced_conscription':
         // Convert vassals to army power
         if (this.gameState.kingdom.imperialOverview) {
-          this.gameState.kingdom.imperialOverview.vasselCount = Math.max(0, this.gameState.kingdom.imperialOverview.vasselCount - 5);
+          this.gameState.kingdom.imperialOverview.vassalCount = Math.max(0, this.gameState.kingdom.imperialOverview.vassalCount - 5);
           this.gameState.armies[0].units.push({
             id: `unit_conscript_${Date.now()}`,
             type: 'infantry' as any,

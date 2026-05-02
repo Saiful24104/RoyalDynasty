@@ -9,6 +9,7 @@ import {
   INITIAL_RESOURCES, NOBLE_HOUSES, ENEMY_DYNASTIES, SUCCESSION_LAWS, 
   HEIR_INCUBATION_MONTHS, INFLUENCE_SETTINGS
 } from '../shared/constants';
+import { GameManager } from '../game/manager';
 
 export function initializeNewGame(rulerName: string, kingdomName: string): GameState {
   const rulerSkills: RulerSkills = {
@@ -97,6 +98,18 @@ export function initializeNewGame(rulerName: string, kingdomName: string): GameS
     species: Species.HUMAN,
     createdAt: Date.now(),
     lastUpdated: Date.now(),
+    namedHouses: [],
+    prophecyCountdown: {
+      id: `prophecy_${Date.now()}`,
+      kingdomsConquered: 0,
+      endOfDaysTriggered: false,
+      lastUpdateDate: Date.now(),
+      milestoneEvents: [
+        { id: 'milestone_1', kingdomsRequired: 3, name: 'First Conquest', description: 'Secure three kingdoms', triggered: false },
+        { id: 'milestone_2', kingdomsRequired: 6, name: 'Rising Emperor', description: 'Secure six kingdoms', triggered: false },
+        { id: 'milestone_3', kingdomsRequired: 10, name: 'End of Days', description: 'Secure all ten kingdoms', triggered: false },
+      ],
+    },
   };
 
   const otherKingdoms: Kingdom[] = [
@@ -527,7 +540,7 @@ export function initializeNewGame(rulerName: string, kingdomName: string): GameS
     ],
   };
 
-  return {
+  const gameState: GameState = {
     kingdom,
     otherKingdoms,
     armies: [mainArmy],
@@ -693,5 +706,12 @@ export function initializeNewGame(rulerName: string, kingdomName: string): GameS
       },
     ],
   };
+
+  const manager = new GameManager(gameState);
+  manager.initializeImperialOverview();
+  manager.initializeImperialPillars();
+  manager.initializeConstellationMastery();
+
+  return gameState;
 }
 

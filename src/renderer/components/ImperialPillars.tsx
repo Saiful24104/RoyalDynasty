@@ -99,7 +99,7 @@ const ImperialPillars: React.FC<ImperialPillarsProps> = ({ gameState, gameManage
             ) : (
               <div className="vacant-info">
                 <span className="vacant-label">Seat Vacant</span>
-                <button className="assign-btn">Assign Hero/Noble</button>
+                <button className="assign-btn" onClick={() => setSelectedPillar(pillar.id)}>Assign Hero/Noble</button>
               </div>
             )}
           </div>
@@ -111,7 +111,7 @@ const ImperialPillars: React.FC<ImperialPillarsProps> = ({ gameState, gameManage
         <div className="modal-overlay" onClick={() => setSelectedPillar(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Assign to {pillars.find(p => p.id === selectedPillar)?.name}</h3>
+              <h3>Assign to {pillarList.find(p => p.id === selectedPillar)?.name || 'Pillar'}</h3>
               <button className="close-btn" onClick={() => setSelectedPillar(null)}>×</button>
             </div>
 

@@ -739,7 +739,7 @@ export interface AuditFinding {
 // ===== IMPERIAL OVERVIEW SYSTEM =====
 export interface ImperialOverview {
   id: string;
-  vasselCount: number; // Number of minor vassals
+  vassalCount: number; // Number of minor vassals
   empireStability: number; // 0-100, average loyalty of 15 Named Houses
   demonicInfluence: number; // Was Corruption, now Demonic Influence (0-100)
 }

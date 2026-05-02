@@ -688,10 +688,10 @@ export class GameEngine {
     }
 
     // Vassal count affects Levy Recovery Speed and Tax Base
-    imperial.vasselCount = this.gameState.kingdom.namedHouses?.length || 0;
+    imperial.vassalCount = this.gameState.kingdom.namedHouses?.length || 0;
 
-    // Vassals increase Corruption over time
-    imperial.demonicInfluence = Math.min(100, imperial.demonicInfluence + (imperial.vasselCount * 0.01));
+    // Vassals increase Demonic Influence over time
+    imperial.demonicInfluence = Math.min(100, imperial.demonicInfluence + (imperial.vassalCount * 0.01));
   }
 
   private processDivineEdicts(deltaTime: number) {
