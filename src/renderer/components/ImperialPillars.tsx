@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { GameState } from '../../shared/types';
 import { GameManager } from '../../game/manager';
+import imperialPillarsBg from '../../assets/backgrounds/imperial/imperial_pillars_bg.png';
 
 interface ImperialPillarsProps {
   gameState: GameState;
@@ -29,11 +30,11 @@ const ImperialPillars: React.FC<ImperialPillarsProps> = ({ gameState, gameManage
   };
 
   return (
-    <div className="imperial-pillars-view imperial-pillars-bg">
+    <div className="imperial-pillars" style={{ backgroundImage: `url(${imperialPillarsBg})`, backgroundSize: 'cover', backgroundPosition: 'center', minHeight: '100vh' }}>
       <div className="pillars-header">
-        <h2>Council of Ten - Imperial Pillars</h2>
+        <h2>Imperial Pillars Active</h2>
         <p className="subtitle">
-          Assign Heroes or Noble Leaders to seats for world-altering effects
+          This is the Imperial Pillars component with background image loaded.
         </p>
       </div>
 

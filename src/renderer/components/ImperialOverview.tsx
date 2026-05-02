@@ -1,6 +1,7 @@
 import React from 'react';
 import { GameState } from '../../shared/types';
 import { GameManager } from '../../game/manager';
+import imperialOverviewBg from '../../assets/backgrounds/imperial/imperial_overview_bg.png';
 
 interface ImperialOverviewProps {
   gameState: GameState;
@@ -36,8 +37,9 @@ const ImperialOverview: React.FC<ImperialOverviewProps> = ({ gameState, gameMana
   };
 
   return (
-    <div className="imperial-overview-view imperial-overview-bg">
-      <h2>Imperial Overview</h2>
+    <div className="imperial-overview" style={{ backgroundImage: `url(${imperialOverviewBg})`, backgroundSize: 'cover', backgroundPosition: 'center', minHeight: '100vh' }}>
+      <h2>Imperial Overview Active</h2>
+      <p>This is the Imperial Overview component with background image loaded.</p>
 
       <div className="imperial-metrics">
         {/* Vassal Count */}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { GameState } from '../../shared/types';
 import { GameManager } from '../../game/manager';
+import constellationMasteryBg from '../../assets/backgrounds/imperial/constellation_mastery_bg.png';
 
 interface ConstellationMasteryProps {
   gameState: GameState;
@@ -36,12 +37,11 @@ const ConstellationMastery: React.FC<ConstellationMasteryProps> = ({ gameState, 
   };
 
   return (
-    <div className="constellation-mastery-view constellation-mastery-bg">
+    <div className="constellation-mastery" style={{ backgroundImage: `url(${constellationMasteryBg})`, backgroundSize: 'cover', backgroundPosition: 'center', minHeight: '100vh' }}>
       <div className="constellation-header">
-        <h2>Constellation Mastery Tree</h2>
+        <h2>Constellation Mastery Active</h2>
         <div className="system-points-display">
-          <span className="label">System Points Available:</span>
-          <span className="value">{ruler.systemPoints || 0}</span>
+          <span className="label">This is the Constellation Mastery component with background image loaded.</span>
         </div>
       </div>
 
