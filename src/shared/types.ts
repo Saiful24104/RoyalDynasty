@@ -170,6 +170,7 @@ export enum NobleRank {
   KING = 'king',
   DUKE = 'duke',
   MARQUIS = 'marquis',
+  EARL = 'earl',
   COUNT = 'count',
   VISCOUNT = 'viscount',
   BARON = 'baron',
@@ -962,7 +963,11 @@ export interface ConstellationMastery {
   nodes: ConstellationNode[];
   pointsSpent: number;
   pointsAvailable: number;
-  totalPassiveBonus: Partial<RulerSkills>;
+  totalPassiveBonus: Partial<{
+    manaGeneration: number;
+    goldCost: number;
+    layers: number;
+  }>;
 }
 
 export interface ConstellationNode {

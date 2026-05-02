@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { GameState } from '../../shared/types';
 import { GameManager } from '../../game/manager';
-import imperialPillarsBg from '../../assets/backgrounds/imperial/imperial_pillars_bg.png';
+import imperialPillarsBg from '../assets/backgrounds/imperial/imperial_pillars_bg.png';
 
 interface ImperialPillarsProps {
   gameState: GameState;
@@ -40,6 +40,7 @@ const ImperialPillars: React.FC<ImperialPillarsProps> = ({ gameState, gameManage
       id: 'pillar_placeholder_war',
       name: 'War Pillar',
       type: 'war',
+      occupant: null,
       description: 'Governs military might and conquest',
       worldAlteringEffect: { description: 'Troops gain lifesteal in Layer 3 Red Zones' },
       isActive: false,
@@ -48,6 +49,7 @@ const ImperialPillars: React.FC<ImperialPillarsProps> = ({ gameState, gameManage
       id: 'pillar_placeholder_coin',
       name: 'Coin Pillar',
       type: 'coin',
+      occupant: null,
       description: 'Controls commerce and wealth',
       worldAlteringEffect: { description: 'Reduces market costs by 20%' },
       isActive: false,

@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { GameState } from '../../shared/types';
 import { GameManager } from '../../game/manager';
-import imperialOverviewBg from '../../assets/backgrounds/imperial/imperial_overview_bg.png';
+import imperialOverviewBg from '../assets/backgrounds/imperial/imperial_overview_bg.png';
 
 interface ImperialOverviewProps {
   gameState: GameState;
@@ -13,7 +13,7 @@ const ImperialOverview: React.FC<ImperialOverviewProps> = ({ gameState, gameMana
   const kingdom = gameState.kingdom;
   const prophecy = gameState.kingdom.prophecyCountdown;
   const realmMgmt = gameState.kingdom.realmManagement;
-  const prestige = gameState.kingdom.court?.prestige ?? 0;
+  const prestige = gameState.kingdom.capital.court.prestige ?? 0;
   const systemPoints = gameState.kingdom.ruler.systemPoints ?? 0;
 
   useEffect(() => {

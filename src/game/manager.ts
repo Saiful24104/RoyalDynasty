@@ -1,7 +1,7 @@
 // Game Manager - Handles game logic and systems
 
-import { GameState, Kingdom, Building, BuildingType, Army, Noble, NobleCouncil, Faction, Unit, UnitType, Commander, Marriage, Species } from '../shared/types';
-import { INITIAL_RESOURCES, BUILDING_CONSTRUCTION_TIME } from '../shared/constants';
+import { GameState, Kingdom, Building, BuildingType, Army, Noble, NobleCouncil, Faction, Unit, UnitType, Commander, Marriage, Species, SuccessionLaw } from '../shared/types';
+import { INITIAL_RESOURCES, BUILDING_CONSTRUCTION_TIME, SUCCESSION_LAWS } from '../shared/constants';
 
 export class GameManager {
   private gameState: GameState;
@@ -258,28 +258,6 @@ export class GameManager {
     }
 
     return marriage;
-  }
-
-  recordLedgerEntry(description: string, category: 'income' | 'expense' | 'transfer', amount: number, source?: string): void {
-    if (!this.gameState.generalLedger) return;
-
-    this.gameState.generalLedger.entries.push({
-      id: `ledger_${Date.now()}`,
-      date: Date.now(),
-      description,
-      category,
-      amount,
-      source,
-    });
-
-    if (category === 'income') {
-      this.gameState.generalLedger.totalIncome += amount;
-    } else if (category === 'expense') {
-      this.gameState.generalLedger.totalExpense += amount;
-    }
-
-    this.gameState.generalLedger.netBalance = this.gameState.generalLedger.totalIncome - this.gameState.generalLedger.totalExpense;
-    this.gameState.generalLedger.lastUpdated = Date.now();
   }
 
   updateMarketPrices(): void {
@@ -642,8 +620,7 @@ export class GameManager {
   // ==================== SUCCESSION LAW SYSTEM ====================
 
   changeSuccessionLaw(newLawId: string): void {
-    const SUCCESSION_LAWS = require('../shared/constants').SUCCESSION_LAWS;
-    const law = Object.values(SUCCESSION_LAWS).find((l: any) => l.id === newLawId);
+    const law = Object.values(SUCCESSION_LAWS as Record<string, SuccessionLaw>).find((l) => l.id === newLawId);
     if (law) {
       this.gameState.successionLaw = law;
       this.gameState.kingdom.stability += 5; // Stability change from new law
@@ -845,6 +822,7 @@ export class GameManager {
             icon: '💰',
           },
           isActive: false,
+          occupant: null,
         },
         {
           id: `pillar_shadow_${Date.now()}`,
@@ -857,6 +835,7 @@ export class GameManager {
             icon: '🕵️',
           },
           isActive: false,
+          occupant: null,
         },
         {
           id: `pillar_seraphine_${Date.now()}`,

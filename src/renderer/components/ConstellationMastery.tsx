@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { GameState } from '../../shared/types';
 import { GameManager } from '../../game/manager';
-import constellationMasteryBg from '../../assets/backgrounds/imperial/constellation_mastery_bg.png';
+import constellationMasteryBg from '../assets/backgrounds/imperial/constellation_mastery_bg.png';
 
 interface ConstellationMasteryProps {
   gameState: GameState;

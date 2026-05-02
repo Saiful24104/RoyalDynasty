@@ -31,6 +31,9 @@ export function initializeNewGame(rulerName: string, kingdomName: string): GameS
     consort: null,
     heir: null,
     legitimacy: 1.0,
+    species: Species.HUMAN,
+    house: 'House Pendragon',
+    rank: NobleRank.KING,
   };
 
   const capital: Capital = {
