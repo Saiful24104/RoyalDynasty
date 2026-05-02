@@ -2146,17 +2146,23 @@ input:focus {
 .imperial-overview {
   background-size: cover;
   background-position: center;
-  min-height: 100vh;
+  background-repeat: no-repeat;
+  min-height: 100%;
+  color: #ffffff;
 }
 
 .imperial-pillars {
   background-size: cover;
   background-position: center;
-  min-height: 100vh;
+  background-repeat: no-repeat;
+  min-height: 100%;
+  color: #ffffff;
 }
 
 .constellation-mastery {
   background-size: cover;
   background-position: center;
-  min-height: 100vh;
+  background-repeat: no-repeat;
+  min-height: 100%;
+  color: #ffffff;
 }

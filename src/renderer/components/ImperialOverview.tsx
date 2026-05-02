@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { GameState } from '../../shared/types';
 import { GameManager } from '../../game/manager';
 import imperialOverviewBg from '../../assets/backgrounds/imperial/imperial_overview_bg.png';
@@ -13,9 +13,23 @@ const ImperialOverview: React.FC<ImperialOverviewProps> = ({ gameState, gameMana
   const kingdom = gameState.kingdom;
   const prophecy = gameState.kingdom.prophecyCountdown;
   const realmMgmt = gameState.kingdom.realmManagement;
+  const prestige = gameState.kingdom.court?.prestige ?? 0;
+  const systemPoints = gameState.kingdom.ruler.systemPoints ?? 0;
+
+  useEffect(() => {
+    if (!gameState.kingdom.imperialOverview) {
+      gameManager.initializeImperialOverview();
+    }
+    gameManager.updateImperialOverview();
+  }, [gameManager, gameState.kingdom.imperialOverview, gameState.kingdom.namedHouses]);
 
   if (!imperial) {
-    return <div className="empty-state">Imperial Overview not initialized</div>;
+    return (
+      <div className="imperial-overview" style={{ backgroundImage: `url(${imperialOverviewBg})` }}>
+        <h2>Imperial Overview Initializing...</h2>
+        <p>Loading imperial summary and bonuses.</p>
+      </div>
+    );
   }
 
   const getModeIcon = (mode?: string): string => {
@@ -37,9 +51,27 @@ const ImperialOverview: React.FC<ImperialOverviewProps> = ({ gameState, gameMana
   };
 
   return (
-    <div className="imperial-overview" style={{ backgroundImage: `url(${imperialOverviewBg})`, backgroundSize: 'cover', backgroundPosition: 'center', minHeight: '100vh' }}>
-      <h2>Imperial Overview Active</h2>
-      <p>This is the Imperial Overview component with background image loaded.</p>
+    <div className="imperial-overview" style={{ backgroundImage: `url(${imperialOverviewBg})` }}>
+      <div className="imperial-overview-header">
+        <h2>Imperial Overview Active</h2>
+        <div className="imperial-summary-row">
+          <div className="summary-card">
+            <span className="summary-label">Prestige</span>
+            <span className="summary-value">{prestige}</span>
+          </div>
+          <div className="summary-card">
+            <span className="summary-label">System Points</span>
+            <span className="summary-value">{systemPoints}</span>
+          </div>
+          <div className="summary-card">
+            <span className="summary-label">Vassal Count</span>
+            <span className="summary-value">{imperial.vasselCount}</span>
+          </div>
+        </div>
+        <button className="refresh-btn" onClick={() => gameManager.updateImperialOverview()}>
+          Refresh Imperial Overview
+        </button>
+      </div>
 
       <div className="imperial-metrics">
         {/* Vassal Count */}

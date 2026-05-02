@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { GameState } from '../../shared/types';
 import { GameManager } from '../../game/manager';
 import imperialPillarsBg from '../../assets/backgrounds/imperial/imperial_pillars_bg.png';
@@ -13,6 +13,12 @@ const ImperialPillars: React.FC<ImperialPillarsProps> = ({ gameState, gameManage
   const pillars = gameState.kingdom.imperialPillars || [];
   const heroes = gameState.heroes || [];
   const nobles = gameState.council?.nobles || [];
+
+  useEffect(() => {
+    if (!gameState.kingdom.imperialPillars) {
+      gameManager.initializeImperialPillars();
+    }
+  }, [gameManager, gameState.kingdom.imperialPillars]);
 
   const handleAssignToPillar = (pillarId: string, heroOrNobleName: string) => {
     gameManager.assignToPillar(pillarId, heroOrNobleName);
@@ -29,17 +35,46 @@ const ImperialPillars: React.FC<ImperialPillarsProps> = ({ gameState, gameManage
     }
   };
 
+  const pillarList = pillars.length > 0 ? pillars : [
+    {
+      id: 'pillar_placeholder_war',
+      name: 'War Pillar',
+      type: 'war',
+      description: 'Governs military might and conquest',
+      worldAlteringEffect: { description: 'Troops gain lifesteal in Layer 3 Red Zones' },
+      isActive: false,
+    },
+    {
+      id: 'pillar_placeholder_coin',
+      name: 'Coin Pillar',
+      type: 'coin',
+      description: 'Controls commerce and wealth',
+      worldAlteringEffect: { description: 'Reduces market costs by 20%' },
+      isActive: false,
+    },
+  ];
+
+  const activeCount = pillarList.filter((pillar) => pillar.isActive).length;
+
   return (
-    <div className="imperial-pillars" style={{ backgroundImage: `url(${imperialPillarsBg})`, backgroundSize: 'cover', backgroundPosition: 'center', minHeight: '100vh' }}>
+    <div className="imperial-pillars" style={{ backgroundImage: `url(${imperialPillarsBg})` }}>
       <div className="pillars-header">
         <h2>Imperial Pillars Active</h2>
         <p className="subtitle">
-          This is the Imperial Pillars component with background image loaded.
+          Assign Heroes or Noble Leaders to seats for world-altering effects.
         </p>
+        <div className="pillar-summary-row">
+          <span>Active Pillars: {activeCount}/{pillarList.length}</span>
+          <span>Heroes Ready: {heroes.length}</span>
+          <span>Nobles Available: {nobles.length}</span>
+        </div>
+        <button className="refresh-btn" onClick={() => gameManager.initializeImperialPillars()}>
+          Initialize Pillars
+        </button>
       </div>
 
       <div className="pillars-grid">
-        {pillars.map((pillar) => (
+        {pillarList.map((pillar) => (
           <div
             key={pillar.id}
             className={`pillar-card ${pillar.isActive ? 'active' : 'vacant'}`}

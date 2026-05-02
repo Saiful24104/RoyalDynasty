@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { GameState } from '../../shared/types';
 import { GameManager } from '../../game/manager';
 import constellationMasteryBg from '../../assets/backgrounds/imperial/constellation_mastery_bg.png';
@@ -12,6 +12,12 @@ const ConstellationMastery: React.FC<ConstellationMasteryProps> = ({ gameState, 
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const constellation = gameState.kingdom.constellationMastery;
   const ruler = gameState.kingdom.ruler;
+
+  useEffect(() => {
+    if (!gameState.kingdom.constellationMastery) {
+      gameManager.initializeConstellationMastery();
+    }
+  }, [gameManager, gameState.kingdom.constellationMastery]);
 
   if (!constellation) {
     return <div className="empty-state">Constellation Mastery Tree not initialized</div>;
@@ -36,12 +42,19 @@ const ConstellationMastery: React.FC<ConstellationMasteryProps> = ({ gameState, 
     return <span className="status-locked">🔒 Locked</span>;
   };
 
+  const totalUnlocked = constellation?.nodes.filter((node) => node.unlocked).length || 0;
+  const pointsAvailable = ruler.systemPoints || 0;
+
   return (
-    <div className="constellation-mastery" style={{ backgroundImage: `url(${constellationMasteryBg})`, backgroundSize: 'cover', backgroundPosition: 'center', minHeight: '100vh' }}>
+    <div className="constellation-mastery" style={{ backgroundImage: `url(${constellationMasteryBg})` }}>
       <div className="constellation-header">
         <h2>Constellation Mastery Active</h2>
-        <div className="system-points-display">
-          <span className="label">This is the Constellation Mastery component with background image loaded.</span>
+        <div className="constellation-summary-row">
+          <span>Unlocked Nodes: {totalUnlocked}/{constellation?.nodes.length || 0}</span>
+          <span>System Points: {pointsAvailable}</span>
+          <button className="refresh-btn" onClick={() => gameManager.initializeConstellationMastery()}>
+            Initialize Constellation Tree
+          </button>
         </div>
       </div>
 
