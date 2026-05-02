@@ -29,7 +29,7 @@ const ImperialPillars: React.FC<ImperialPillarsProps> = ({ gameState, gameManage
   };
 
   return (
-    <div className="imperial-pillars-view">
+    <div className="imperial-pillars-view imperial-pillars-bg">
       <div className="pillars-header">
         <h2>Council of Ten - Imperial Pillars</h2>
         <p className="subtitle">

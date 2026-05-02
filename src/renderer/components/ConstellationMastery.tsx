@@ -36,7 +36,7 @@ const ConstellationMastery: React.FC<ConstellationMasteryProps> = ({ gameState, 
   };
 
   return (
-    <div className="constellation-mastery-view">
+    <div className="constellation-mastery-view constellation-mastery-bg">
       <div className="constellation-header">
         <h2>Constellation Mastery Tree</h2>
         <div className="system-points-display">

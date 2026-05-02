@@ -2141,3 +2141,19 @@ input:focus {
   border-radius: 4px;
   text-align: center;
 }
+
+/* Imperial Backgrounds */
+.imperial-overview-bg {
+  background: url('/assets/backgrounds/imperial/imperial_overview_bg.png') center/cover;
+  background-color: #1a2448;
+}
+
+.imperial-pillars-bg {
+  background: url('/assets/backgrounds/imperial/imperial_pillars_bg.png') center/cover;
+  background-color: #1a2448;
+}
+
+.constellation-mastery-bg {
+  background: url('/assets/backgrounds/imperial/constellation_mastery_bg.png') center/cover;
+  background-color: #1a2448;
+}

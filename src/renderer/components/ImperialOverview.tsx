@@ -36,7 +36,7 @@ const ImperialOverview: React.FC<ImperialOverviewProps> = ({ gameState, gameMana
   };
 
   return (
-    <div className="imperial-overview-view">
+    <div className="imperial-overview-view imperial-overview-bg">
       <h2>Imperial Overview</h2>
 
       <div className="imperial-metrics">
