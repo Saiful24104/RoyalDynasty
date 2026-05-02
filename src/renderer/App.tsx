@@ -20,8 +20,29 @@ import Guilds from './components/Guilds';
 import Tavern from './components/Tavern';
 import Academy from './components/Academy';
 import WorldMap from './components/WorldMap';
+import ImperialOverview from './components/ImperialOverview';
+import ImperialPillars from './components/ImperialPillars';
+import ConstellationMastery from './components/ConstellationMastery';
 
-type View = 'dashboard' | 'kingdom' | 'capital' | 'world' | 'army' | 'buildings' | 'council' | 'market' | 'court' | 'bloodline' | 'heroes' | 'guilds' | 'tavern' | 'academy';
+
+type View =
+  | 'dashboard'
+  | 'kingdom'
+  | 'capital'
+  | 'world'
+  | 'army'
+  | 'buildings'
+  | 'council'
+  | 'market'
+  | 'court'
+  | 'bloodline'
+  | 'heroes'
+  | 'guilds'
+  | 'tavern'
+  | 'academy'
+  | 'imperial-overview'
+  | 'imperial-pillars'
+  | 'constellation-mastery';
 
 const App: React.FC = () => {
   const [gameState, setGameState] = useState<GameState | null>(null);
@@ -155,6 +176,28 @@ const App: React.FC = () => {
               📊 Dashboard
             </button>
           </div>
+          <div className="nav-section">
+  <h4>IMPERIAL</h4>
+  <button
+    className={`nav-button ${currentView === 'imperial-overview' ? 'active' : ''}`}
+    onClick={() => setCurrentView('imperial-overview')}
+  >
+    📜 Imperial Overview
+  </button>
+  <button
+    className={`nav-button ${currentView === 'imperial-pillars' ? 'active' : ''}`}
+    onClick={() => setCurrentView('imperial-pillars')}
+  >
+    🏛 Imperial Pillars
+  </button>
+  <button
+    className={`nav-button ${currentView === 'constellation-mastery' ? 'active' : ''}`}
+    onClick={() => setCurrentView('constellation-mastery')}
+  >
+    ✨ Constellation Mastery
+  </button>
+</div>
+
         </nav>
 
         <main className="main-content">
@@ -172,6 +215,10 @@ const App: React.FC = () => {
           {currentView === 'guilds' && <Guilds gameState={gameState} gameManager={gameManager} />}
           {currentView === 'tavern' && <Tavern gameState={gameState} gameManager={gameManager} />}
           {currentView === 'academy' && <Academy gameState={gameState} gameManager={gameManager} />}
+          {/* New Imperial systems */}
+  {currentView === 'imperial-overview' && <ImperialOverview gameState={gameState} gameManager={gameManager} />}
+  {currentView === 'imperial-pillars' && <ImperialPillars gameState={gameState} gameManager={gameManager} />}
+  {currentView === 'constellation-mastery' && <ConstellationMastery gameState={gameState} gameManager={gameManager} />}
         </main>
 
         <aside className="sidebar-controls">

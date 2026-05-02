@@ -24,6 +24,20 @@ export interface Kingdom {
   species: Species;
   createdAt: number;
   lastUpdated: number;
+  // New systems
+  imperialOverview?: ImperialOverview;
+  imperialPillars?: ImperialPillar[];
+  divineEdicts?: DivineEdict[];
+  cultivationTree?: CultivationTree;
+  attributeBreakthroughs?: AttributeBreakthrough[];
+  realmManagement?: RealmManagementState;
+  leyLineEconomy?: LeyLineEconomy;
+  prophecyCountdown?: ProphecyCountdown;
+  enhancedBloodline?: EnhancedBloodline;
+  domainPulse?: DomainPulse;
+  constellationMastery?: ConstellationMastery;
+  namedHouses?: NamedHouse[];
+  systemPoints?: number; // Currency for Edicts and Constellation
 }
 
 export interface Marriage {
@@ -50,6 +64,10 @@ export interface Ruler {
   species: string;
   house: string; // Noble house name
   rank: NobleRank;
+  // New systems
+  systemPoints?: number; // Currency for Edicts
+  attributeBreakthroughs?: AttributeBreakthrough[];
+  activePillars?: string[]; // Pillar IDs occupied by this ruler
 }
 
 export interface RulerSkills {
@@ -66,6 +84,13 @@ export interface Consort {
   title: string;
   traits: string[];
   influence: number;
+  // New systems
+  portraitPath?: string; // Dynamic portrait updates
+  occupiesPillar?: boolean; // If occupies Seraphine seat
+  houseAffiliation?: string;
+  graceBuffActive?: boolean; // During heir incubation
+  diplomacyBoost?: number;
+  pietyBoost?: number;
 }
 
 export interface Heir {
@@ -84,6 +109,20 @@ export interface Heir {
     manaInvested: number;
   };
   cultivationPath?: CultivationPath;
+  // Cultivation progression
+  cultivationLevel?: number; // 1-100+
+  cultivationProgress?: number; // 0-100
+  ageStage?: 'infant' | 'youth' | 'adult' | 'elder';
+  portraitPath?: string;
+  systemEyePotential?: number; // 0-100
+  bloodlineTalent?: string;
+  unlockedTraits?: string[];
+  inheritanceChance?: number; // Affected by cultivation level
+  divineOmen?: {
+    triggered: boolean;
+    triggeredAt?: number;
+    stats: Partial<RulerSkills>;
+  };
 }
 
 export interface Capital {
@@ -695,4 +734,286 @@ export interface AuditFinding {
   description: string;
   severity: 'low' | 'medium' | 'high' | 'critical';
   evidence: string;
+}
+
+// ===== IMPERIAL OVERVIEW SYSTEM =====
+export interface ImperialOverview {
+  id: string;
+  vasselCount: number; // Number of minor vassals
+  empireStability: number; // 0-100, average loyalty of 15 Named Houses
+  demonicInfluence: number; // Was Corruption, now Demonic Influence (0-100)
+}
+
+// ===== COUNCIL OF TEN / IMPERIAL PILLARS =====
+export enum ImperialPillarType {
+  WAR = 'war',
+  COIN = 'coin',
+  SHADOW = 'shadow',
+  SERAPHINE = 'seraphine', // Special Consort seat
+  KNOWLEDGE = 'knowledge',
+  FAITH = 'faith',
+  TRADE = 'trade',
+  ESPIONAGE = 'espionage',
+  HARVEST = 'harvest',
+  VOID = 'void',
+}
+
+export interface ImperialPillar {
+  id: string;
+  type: ImperialPillarType;
+  name: string;
+  occupant?: Hero | Noble | null; // Can be null if vacant
+  description: string;
+  worldAlteringEffect: {
+    type: string;
+    description: string;
+    icon: string;
+  };
+  isActive: boolean;
+  duration?: number; // Some effects might be temporary
+}
+
+// ===== DIVINE EDICTS SYSTEM =====
+export enum EdictsType {
+  IMPERIAL_CENSUS = 'imperial_census', // Reveal hidden resource nodes
+  FORCED_CONSCRIPTION = 'forced_conscription', // Convert vassals to army power
+  ROYAL_MARRIAGE_DECREE = 'royal_marriage_decree', // Guarantees 100% marriage success
+  EYE_OF_TRUTH = 'eye_of_truth', // Reveal hidden potential of commoners
+  DIVINE_BLESSING = 'divine_blessing',
+  CULTURAL_RENAISSANCE = 'cultural_renaissance',
+  HARVEST_MOON = 'harvest_moon',
+  ETERNAL_DARKNESS = 'eternal_darkness',
+}
+
+export interface DivineEdict {
+  id: string;
+  type: EdictsType;
+  name: string;
+  description: string;
+  cost: number; // System Points (SP) or Gold
+  costType: 'sp' | 'gold';
+  consequences: {
+    resources?: Partial<Resources>;
+    peasantLoyalty?: number; // Can be negative
+    stability?: number;
+  };
+  active: boolean;
+  dateActivated?: number;
+}
+
+// ===== CULTIVATION TREE (SP SYSTEM) =====
+export interface CultivationTree {
+  id: string;
+  nodes: TreeNode[];
+  pointsSpent: number;
+  pointsAvailable: number;
+}
+
+export interface TreeNode {
+  id: string;
+  name: string;
+  description: string;
+  spCost: number;
+  type: EdictsType;
+  unlockedAt?: number;
+  parentNodeId?: string;
+  childNodeIds?: string[];
+  permanentPassive?: string; // Description of permanent effect
+  icon: string;
+}
+
+// ===== KING'S ATTRIBUTES BREAKTHROUGH EFFECTS =====
+export interface AttributeBreakthrough {
+  id: string;
+  attribute: keyof RulerSkills;
+  threshold: number; // 75, 80, etc.
+  name: string;
+  description: string;
+  effect: string;
+  unlockedAt?: number;
+  isActive: boolean;
+}
+
+// ===== REALM MANAGEMENT SYSTEM (NURTURE/RULE/EXTRACT) =====
+export enum RealmManagementMode {
+  NURTURE = 'nurture', // Stability +10%, Mana +10%, Gold -5%
+  RULE = 'rule', // Balanced approach
+  EXTRACT = 'extract', // Gold +50%, Demonicinfluence +20%, Stability -20%, visually corrupts map
+}
+
+export interface RealmManagementState {
+  currentMode: RealmManagementMode;
+  modeChangedAt: number;
+  extractionDuration?: number; // How long Extract mode is active
+  corruptedNodes?: string[]; // Layer 3 nodes corrupted by Extract mode
+}
+
+// ===== LEY LINE ECONOMY =====
+export interface LeyLineEconomy {
+  id: string;
+  manaWellsControlled: string[]; // Estate/region IDs
+  riversControlled: string[]; // Estate/region IDs
+  totalManaGeneration: number;
+  tributePipeline: TributePipeline[];
+  manaBar: {
+    current: number;
+    max: number;
+    pulseIntensity: number; // Visual feedback
+  };
+}
+
+export interface TributePipeline {
+  id: string;
+  sourceHouse: string; // Noble house name
+  tributeResources: Partial<Resources>;
+  frequency: 'weekly' | 'monthly' | 'yearly';
+  nextDue: number;
+  logs: TributeLog[];
+}
+
+export interface TributeLog {
+  id: string;
+  date: number;
+  sourceName: string;
+  resourcesDelivered: Partial<Resources>;
+  message: string; // e.g., "House Iron-Thorne offers 500 Iron to the Imperial Forge"
+}
+
+// ===== PROPHECY COUNTDOWN =====
+export interface ProphecyCountdown {
+  id: string;
+  kingdomsConquered: number; // 0-10
+  endOfDaysTriggered: boolean;
+  lastUpdateDate: number;
+  milestoneEvents: MilestoneEvent[];
+}
+
+export interface MilestoneEvent {
+  id: string;
+  kingdomsRequired: number; // At 10, trigger major 2.0 shift
+  name: string;
+  description: string;
+  triggered: boolean;
+  triggeredAt?: number;
+}
+
+// ===== ENHANCED BLOODLINE SYSTEM =====
+export interface EnhancedBloodline {
+  id: string;
+  emperor: BloodlineCharacter;
+  consort?: BloodlineCharacter;
+  children: BloodlineCharacter[];
+  marriages: BloodlineMarriage[];
+  houseBuffs: HouseBloodlineBuff[];
+}
+
+export interface BloodlineCharacter {
+  id: string;
+  name: string;
+  portraitPath: string; // e.g., /assets/backgrounds/portrait-aldwin.png
+  ageStage: 'infant' | 'youth' | 'adult' | 'elder'; // Affects portrait evolution
+  cultivationLevel: number;
+  cultivationProgress: number; // 0-100
+  houseAffiliation?: string;
+  crestPath?: string; // e.g., /assets/backgrounds/crest-quartz.png
+  attributes?: Partial<RulerSkills>;
+  traits?: string[];
+}
+
+export interface BloodlineMarriage {
+  id: string;
+  character1Id: string;
+  character2Id: string;
+  marriageDate: number;
+  marriageType: 'dynastic' | 'political' | 'trade' | 'military';
+}
+
+export interface HouseBloodlineBuff {
+  id: string;
+  houseName: string;
+  attributeBonus: Partial<RulerSkills>;
+  description: string;
+}
+
+// ===== DOMAIN PULSE SYSTEM =====
+export interface DomainPulse {
+  id: string;
+  stability: number; // 0-100
+  estateFeeds: EstateFeed[]; // Geographic tributes
+  fogOfGovernance: {
+    enabled: boolean; // Based on Intrigue/Wisdom
+    affectsCorruptionBar: boolean;
+    affectsLoyaltyBar: boolean;
+  };
+  systemScanUnlocked?: boolean; // Reveals true values
+}
+
+export interface EstateFeed {
+  id: string;
+  estateName: string;
+  resourceGeneration: Partial<Resources>;
+  advantage?: string; // e.g., "Mountain Advantage", "River Advantage"
+  geographicBonus: number;
+}
+
+// ===== CONSTELLATION MASTERY TREE =====
+export interface ConstellationMastery {
+  id: string;
+  nodes: ConstellationNode[];
+  pointsSpent: number;
+  pointsAvailable: number;
+  totalPassiveBonus: Partial<RulerSkills>;
+}
+
+export interface ConstellationNode {
+  id: string;
+  name: string;
+  description: string;
+  spCost: number;
+  constellation: string; // e.g., "The All-Seeing Eye"
+  unlocked: boolean;
+  unlockedAt?: number;
+  parentNodeId?: string;
+  childNodeIds?: string[];
+  permanentPassive: {
+    name: string;
+    description: string;
+    effect: Partial<{
+      manaGeneration: number;
+      goldCost: number;
+      layers: number; // Unlock Layer 3, etc.
+    }>;
+  };
+  backgroundPath: string; // e.g., /assets/backgrounds/constellation-node-active.png
+}
+
+// ===== HERO SYSTEM ENHANCEMENT =====
+export interface HeroEnhancement {
+  level: number;
+  experience: number;
+  systemEyePotential: number;
+  bloodlineTalent?: string;
+  pilgrimageLevel?: number; // If Hero can go on pilgrimages
+  talentSlots: TalentSlot[];
+}
+
+export interface TalentSlot {
+  id: string;
+  slotNumber: number;
+  talent?: string;
+  unlockedAt?: number;
+}
+
+// ===== NAMED HOUSES (15 Named Houses for Empire Stability) =====
+export interface NamedHouse {
+  id: string;
+  name: string;
+  crestPath: string;
+  lordName: string;
+  loyalty: number; // 0-100, affects Empire Stability
+  wealth: number;
+  power: number;
+  demonicInfluence: number; // At 100%, becomes Boss node
+  isBossNode: boolean;
+  relationship: number; // With main kingdom
 }

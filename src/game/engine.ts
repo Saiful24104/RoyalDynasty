@@ -55,6 +55,28 @@ export class GameEngine {
 
     // Maintenance costs
     this.applyMaintenanceCosts(deltaTime);
+
+    // ===== NEW SYSTEMS =====
+    // Update Ley Line mana generation
+    this.updateLeyLineMana(deltaTime);
+
+    // Process attribute breakthroughs
+    this.processAttributeBreakthroughs();
+
+    // Update Domain Pulse
+    this.updateDomainPulse();
+
+    // Check Prophecy milestones
+    this.processProphecyCountdown();
+
+    // Update Imperial Overview
+    this.updateImperialOverview();
+
+    // Process Divine Edicts effects
+    this.processDivineEdicts(deltaTime);
+
+    // Update Constellation passive bonuses
+    this.applyConstellationBonuses();
   }
 
   private updateGameTime(deltaTime: number) {
@@ -294,6 +316,8 @@ export class GameEngine {
       if (heir.incubationMonthsRemaining <= 0) {
         heir.isIncubating = false;
         heir.age = 0;
+        // Trigger Divine Omen event
+        this.triggerDivineOmenEvent(heir);
       }
     }
 
@@ -334,6 +358,59 @@ export class GameEngine {
       }
     });
 
+    // ===== TRIBUTE COLLECTION FROM NAMED HOUSES =====
+    const leyline = this.gameState.kingdom.leyLineEconomy;
+    if (leyline) {
+      leyline.tributePipeline.forEach(pipeline => {
+        if (pipeline.nextDue <= Date.now()) {
+          // Collect tribute
+          Object.entries(pipeline.tributeResources).forEach(([resource, amount]) => {
+            if (resource in this.gameState.kingdom.resources) {
+              (this.gameState.kingdom.resources as any)[resource] += amount;
+            }
+          });
+          // Update next due date
+          pipeline.nextDue = Date.now() + 30 * 24 * 60 * 60 * 1000;
+        }
+      });
+    }
+
+    // ===== SHADOW PILLAR MONTHLY SCANDAL =====
+    const shadowPillar = this.gameState.kingdom.imperialPillars?.find(p => p.type === 'shadow');
+    if (shadowPillar && shadowPillar.isActive && shadowPillar.occupant) {
+      // Trigger scandal on rival kingdom
+      this.triggerMonthlyScandal();
+    }
+
+    // ===== LEY LINE MANA PULSE VISUAL UPDATE =====
+    if (leyline && leyline.manaBar) {
+      leyline.manaBar.pulseIntensity = 0.5 + 0.5 * Math.sin(Date.now() / 500);
+    }
+
+    // ===== DEMONIC INFLUENCE INCREASE FROM EXTRACT MODE =====
+    const realmMgmt = this.gameState.kingdom.realmManagement;
+    if (realmMgmt && realmMgmt.currentMode === 'extract') {
+      const imperial = this.gameState.kingdom.imperialOverview;
+      if (imperial) {
+        imperial.demonicInfluence = Math.min(100, imperial.demonicInfluence + 5);
+      }
+    }
+
+    // ===== CULTIVATION PROGRESSION FOR HEIRS =====
+    if (heir && heir.cultivationLevel !== undefined && !heir.isIncubating) {
+      // Heir cultivation progress increases over time
+      heir.cultivationProgress = Math.min(100, (heir.cultivationProgress || 0) + 10);
+      if (heir.cultivationProgress >= 100) {
+        heir.cultivationLevel = (heir.cultivationLevel || 0) + 1;
+        heir.cultivationProgress = 0;
+        // Unlock trait at level 50
+        if (heir.cultivationLevel === 50 && !heir.systemEyePotential) {
+          heir.systemEyePotential = 50;
+          heir.unlockedTraits = ['System Eye Potential'];
+        }
+      }
+    }
+
     // ===== LEDGER AUTO-RECORDING =====
     // Record monthly maintenance costs
     const ledger = this.gameState.generalLedger;
@@ -354,6 +431,75 @@ export class GameEngine {
 
     ledger.netBalance = ledger.totalIncome - ledger.totalExpense;
     ledger.lastUpdated = Date.now();
+
+    // ===== CONSORT GRACE BUFF DURING HEIR INCUBATION =====
+    const consort = this.gameState.kingdom.ruler.consort;
+    if (consort && heir && heir.isIncubating) {
+      consort.graceBuffActive = true;
+      // Grace buff increases mana generation by 10%
+      this.gameState.kingdom.resources.mana = Math.floor(this.gameState.kingdom.resources.mana * 1.1);
+    } else if (consort) {
+      consort.graceBuffActive = false;
+    }
+  }
+
+  private triggerDivineOmenEvent(heir: any) {
+    const omen = {
+      triggered: true,
+      triggeredAt: Date.now(),
+      stats: {
+        leadership: heir.potential.leadership,
+        military: heir.potential.military,
+        wisdom: heir.potential.wisdom,
+        diplomacy: heir.potential.diplomacy,
+        charisma: heir.potential.charisma,
+      },
+    };
+
+    heir.divineOmen = omen;
+
+    // Create event
+    this.gameState.events.push({
+      id: `divine_omen_${Date.now()}`,
+      type: 'political' as any,
+      title: '✨ Divine Omen of Birth ✨',
+      description: `Your heir ${heir.name} has been born! The heavens have spoken through divine omens.`,
+      timestamp: Date.now(),
+      resolved: false,
+      choices: [
+        {
+          id: 'choice_celebrate',
+          text: 'Celebrate the Divine Birth',
+          consequences: {
+            resources: { prestige: 50 },
+            stability: 10,
+            legitimacy: 0.1,
+            morale: 0,
+          },
+          outcome: 'The kingdom celebrates!',
+        },
+      ],
+    });
+  }
+
+  private triggerMonthlyScandal() {
+    // Shadow Pillar triggers scandal on a random rival
+    if (this.gameState.kingdom.diplomacy.length === 0) return;
+
+    const rivals = this.gameState.kingdom.diplomacy.filter(r => r.relationshipValue < 0);
+    if (rivals.length === 0) return;
+
+    const target = rivals[Math.floor(Math.random() * rivals.length)];
+
+    this.gameState.events.push({
+      id: `scandal_${Date.now()}`,
+      type: 'political' as any,
+      title: '🕵️ Scandal Uncovered!',
+      description: `A scandal has been orchestrated against kingdom ${target.kingdomId}, improving relations with their rivals.`,
+      timestamp: Date.now(),
+      resolved: false,
+      choices: [],
+    });
   }
 
   private onNewYear() {
@@ -433,5 +579,150 @@ export class GameEngine {
 
   updateGameState(newState: Partial<GameState>) {
     this.gameState = { ...this.gameState, ...newState };
+  }
+
+  // ===== NEW SYSTEM INTEGRATION METHODS =====
+
+  private updateLeyLineMana(deltaTime: number) {
+    const leyline = this.gameState.kingdom.leyLineEconomy;
+    if (!leyline) return;
+
+    // Generate mana based on controlled wells and rivers
+    const manaGeneration = (leyline.totalManaGeneration * deltaTime) / 10000;
+    leyline.manaBar.current = Math.min(leyline.manaBar.max, leyline.manaBar.current + manaGeneration);
+    this.gameState.kingdom.resources.mana += manaGeneration;
+
+    // Visual pulse effect
+    leyline.manaBar.pulseIntensity = 0.5 + 0.5 * Math.sin(Date.now() / 1000);
+  }
+
+  private processAttributeBreakthroughs() {
+    const ruler = this.gameState.kingdom.ruler;
+    const breakthroughs = this.gameState.kingdom.attributeBreakthroughs;
+
+    if (!breakthroughs) return;
+
+    breakthroughs.forEach(breakthrough => {
+      const attributeValue = ruler.skills[breakthrough.attribute];
+      if (attributeValue >= breakthrough.threshold && !breakthrough.isActive) {
+        breakthrough.isActive = true;
+        breakthrough.unlockedAt = Date.now();
+
+        // Apply breakthrough effects
+        switch (breakthrough.effect) {
+          case 'unit_stats_boost_15':
+            this.gameState.armies.forEach(army => {
+              army.units.forEach(unit => {
+                unit.health = Math.floor(unit.health * 1.15);
+              });
+            });
+            break;
+          case 'loyalty_boost_20':
+            if (this.gameState.kingdom.namedHouses) {
+              this.gameState.kingdom.namedHouses.forEach(h => {
+                h.loyalty = Math.min(100, h.loyalty + 20);
+              });
+            }
+            break;
+        }
+      }
+    });
+  }
+
+  private updateDomainPulse() {
+    const pulse = this.gameState.kingdom.domainPulse;
+    if (!pulse) return;
+
+    // Update stability from overall kingdom status
+    pulse.stability = this.gameState.kingdom.stability;
+
+    // Check if Fog of Governance should be enabled
+    const wisdom = this.gameState.kingdom.ruler.skills.wisdom;
+    pulse.fogOfGovernance.enabled = wisdom < 60;
+
+    // Update estate feeds
+    pulse.estateFeeds = this.gameState.estates.map(estate => ({
+      id: estate.id,
+      estateName: estate.name,
+      resourceGeneration: estate.resources,
+      advantage: this.getEstateAdvantage(estate),
+      geographicBonus: this.calculateGeographicBonus(estate),
+    }));
+  }
+
+  private getEstateAdvantage(estate: any): string {
+    if (estate.location?.y > 60) return 'Mountain Advantage';
+    if (estate.location?.x < 30) return 'River Advantage';
+    if (estate.location?.x > 70) return 'Harbor Advantage';
+    return 'Strategic Position';
+  }
+
+  private calculateGeographicBonus(estate: any): number {
+    let bonus = 1.0;
+    if (estate.location?.y > 60) bonus += 0.2;
+    if (estate.location?.x < 30) bonus += 0.25;
+    if (estate.location?.x > 70) bonus += 0.15;
+    return bonus;
+  }
+
+  private processProphecyCountdown() {
+    const prophecy = this.gameState.kingdom.prophecyCountdown;
+    if (!prophecy) return;
+
+    // Check for prophecy milestones each tick
+    prophecy.milestoneEvents.forEach(milestone => {
+      if (milestone.kingdomsRequired <= prophecy.kingdomsConquered && !milestone.triggered) {
+        milestone.triggered = true;
+      }
+    });
+  }
+
+  private updateImperialOverview() {
+    const imperial = this.gameState.kingdom.imperialOverview;
+    if (!imperial) return;
+
+    // Update Empire Stability as average loyalty of Named Houses
+    if (this.gameState.kingdom.namedHouses && this.gameState.kingdom.namedHouses.length > 0) {
+      const totalLoyalty = this.gameState.kingdom.namedHouses.reduce((sum, h) => sum + h.loyalty, 0);
+      imperial.empireStability = Math.floor(totalLoyalty / this.gameState.kingdom.namedHouses.length);
+    }
+
+    // Vassal count affects Levy Recovery Speed and Tax Base
+    imperial.vasselCount = this.gameState.kingdom.namedHouses?.length || 0;
+
+    // Vassals increase Corruption over time
+    imperial.demonicInfluence = Math.min(100, imperial.demonicInfluence + (imperial.vasselCount * 0.01));
+  }
+
+  private processDivineEdicts(deltaTime: number) {
+    const edicts = this.gameState.kingdom.divineEdicts;
+    if (!edicts) return;
+
+    edicts.forEach(edict => {
+      if (!edict.active) return;
+
+      // Process ongoing effects of edicts
+      // Some edicts might have continuous effects
+    });
+  }
+
+  private applyConstellationBonuses() {
+    const constellation = this.gameState.kingdom.constellationMastery;
+    if (!constellation) return;
+
+    // Apply total passive bonuses from constellation nodes
+    if (constellation.totalPassiveBonus.layers && constellation.totalPassiveBonus.layers >= 3) {
+      // Layer 3 is unlocked permanently
+      this.gameState.worldMap.regions = this.gameState.worldMap.regions || [];
+    }
+
+    if (constellation.totalPassiveBonus.manaGeneration) {
+      // Increase mana generation
+      const bonus = (constellation.totalPassiveBonus.manaGeneration || 0) / 100;
+      const leyline = this.gameState.kingdom.leyLineEconomy;
+      if (leyline) {
+        leyline.totalManaGeneration *= (1 + bonus);
+      }
+    }
   }
 }
